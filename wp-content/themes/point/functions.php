@@ -49,7 +49,7 @@ add_action( 'after_setup_theme', 'mts_setup' );
 /*-----------------------------------------------------------------------------------*/
 class mts_Walker extends Walker_Nav_Menu
 {
-	function start_el(&$output, $item, $depth, $args) {
+	function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0) {
 		global $wp_query;
 		$indent = ( $depth ) ? str_repeat( "\t", $depth ) : '';
 
@@ -79,6 +79,22 @@ class mts_Walker extends Walker_Nav_Menu
 }
 
 /*-----------------------------------------------------------------------------------*/
+/*	RTL language support - also in mts_load_footer_scripts()
+/*-----------------------------------------------------------------------------------*/
+$mts_options = get_option('point');
+if(isset($mts_options['mts_rtl'])) { if($mts_options['mts_rtl'] == '1' && $mts_options['mts_rtl'] != '') {
+    function mts_rtl() {
+        global $wp_locale, $wp_styles;
+        $wp_locale->text_direction = 'rtl';
+    	if ( ! is_a( $wp_styles, 'WP_Styles' ) ) {
+    		$wp_styles = new WP_Styles();
+    		$wp_styles->text_direction = 'rtl';
+    	}
+    }
+    add_action( 'init', 'mts_rtl' );
+}}
+
+/*-----------------------------------------------------------------------------------*/
 /*	Javascsript
 /*-----------------------------------------------------------------------------------*/
 function mts_add_scripts() {
@@ -90,10 +106,8 @@ function mts_add_scripts() {
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
 	}
-	
-	// Site wide js
-	wp_enqueue_script('modernizr', get_stylesheet_directory_uri() . '/js/modernizr.min.js');
-	wp_enqueue_script('customscript', get_stylesheet_directory_uri() . '/js/customscript.js');
+
+	wp_enqueue_script('customscript', get_stylesheet_directory_uri() . '/js/customscript.js', array(), 'null', true);
 
 }
 add_action('wp_enqueue_scripts','mts_add_scripts');
@@ -105,15 +119,21 @@ function mts_enqueue_css() {
     $mts_options = get_option('point');
     global $data;
 	
-	wp_enqueue_style('stylesheet', get_stylesheet_directory_uri() . '/style.css', 'style');
+	wp_enqueue_style('stylesheet', get_stylesheet_directory_uri() . '/style.css','style');
 	
-	wp_enqueue_style( 'GoogleFonts', 'http://fonts.googleapis.com/css?family=Droid+Sans:regular,bold&v1');
-    wp_enqueue_style( 'GoogleFonts2', 'http://fonts.googleapis.com/css?family=Open+Sans:regular,bold&v1');
+	wp_enqueue_style( 'GoogleFonts', '//fonts.googleapis.com/css?family=Droid+Sans:400,700');
+	wp_enqueue_style( 'GoogleFonts2', '//fonts.googleapis.com/css?family=Open+Sans:400,700');
 	
 	//Responsive
     if($mts_options['mts_responsive'] == '1') {
-        wp_enqueue_style('responsive', get_stylesheet_directory_uri() . '/css/responsive.css', 'style');
+        wp_enqueue_style('responsive', get_template_directory_uri() . '/css/responsive.css', 'style');
     }
+
+    // RTL
+    if(isset($mts_options['mts_rtl'])) { if($mts_options['mts_rtl'] == '1' && $mts_options['mts_rtl'] != '') {
+		wp_register_style( 'mts_rtl', get_template_directory_uri() . '/css/rtl.css', 'style', true );
+		wp_enqueue_style( 'mts_rtl' );
+	}}
 	
 	$mts_sclayout = '';
 	$mts_bg = '';
@@ -129,9 +149,9 @@ function mts_enqueue_css() {
 	$custom_css = "
 		body {background-color:{$mts_options['mts_bg_color']}; }
 		body {background-image: url({$mts_bg});}
-		input#author:focus, input#email:focus, input#url:focus, #commentform textarea:focus { border-color:{$mts_options['mts_color_scheme']};}
+		input#author:focus, input#email:focus, input#url:focus, #commentform textarea:focus, .widget .wpt_widget_content #tags-tab-content ul li a { border-color:{$mts_options['mts_color_scheme']};}
 		a:hover, .menu .current-menu-item > a, .menu .current-menu-item, .current-menu-ancestor > a.sf-with-ul, .current-menu-ancestor, footer .textwidget a, .single_post a, #commentform a, .copyrights a:hover, a, footer .widget li a:hover, .menu > li:hover > a, .single_post .post-info a, .post-info a, .readMore a, .reply a, .fn a, .carousel a:hover, .single_post .related-posts a:hover, .sidebar.c-4-12 .textwidget a, footer .textwidget a, .sidebar.c-4-12 a:hover { color:{$mts_options['mts_color_scheme']}; }	
-		.nav-previous a, .nav-next a, .header-button, .sub-menu, #commentform input#submit, .tagcloud a, #tabber ul.tabs li a.selected, .featured-cat, .mts-subscribe input[type='submit'], .pagination a { background-color:{$mts_options['mts_color_scheme']}; color: #fff; }
+		.nav-previous a, .nav-next a, .header-button, .sub-menu, #commentform input#submit, .tagcloud a, #tabber ul.tabs li a.selected, .featured-cat, .mts-subscribe input[type='submit'], .pagination a, .widget .wpt_widget_content #tags-tab-content ul li a, .latestPost-review-wrapper { background-color:{$mts_options['mts_color_scheme']}; color: #fff; }
 		{$mts_sclayout}
 		{$mts_options['mts_custom_css']}
 			";
@@ -163,14 +183,8 @@ include("functions/widget-ad125.php");
 // Add the 300x250 Ad Block Custom Widget
 include("functions/widget-ad300.php");
 
-// Add the Tabbed Custom Widget
-include("functions/widget-tabs.php");
-
 // Add Facebook Like box Widget
 include("functions/widget-fblikebox.php");
-
-// Add Google Plus box Widget
-include("functions/widget-googleplus.php");
 
 // Add Subscribe Widget
 include("functions/widget-subscribe.php");
@@ -180,6 +194,9 @@ include("functions/widget-social.php");
 
 // Add Welcome message
 include("functions/welcome-message.php");
+
+// Recommended Plugin Activation
+include( "functions/plugin-activation.php" );
 
 // Theme Functions
 include("functions/theme-actions.php");
@@ -226,6 +243,19 @@ if( !function_exists( 'mts_custom_gravatar' ) ) {
         return $avatar_defaults;
     }
     add_filter( 'avatar_defaults', 'mts_custom_gravatar' );
+}
+
+/*-----------------------------------------------------------------------------------*/
+/*	Remove more link from the_content and use custom read more
+/*-----------------------------------------------------------------------------------*/
+add_filter( 'the_content_more_link', 'mts_remove_more_link', 10, 2 );
+function mts_remove_more_link( $more_link, $more_link_text ) {
+	return '';
+}
+// shorthand function to check for more tag in post
+function mts_post_has_moretag() {
+    global $post;
+    return strpos( $post->post_content, '<!--more-->' );
 }
 
 /*-----------------------------------------------------------------------------------*/

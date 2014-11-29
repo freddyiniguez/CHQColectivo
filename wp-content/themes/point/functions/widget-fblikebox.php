@@ -94,7 +94,7 @@ class Facebook_Like_Widget extends WP_Widget {
 		
 		<p>
 			<label for="<?php echo $this->get_field_id('width'); ?>"><?php _e('Width','mythemeshop'); ?>:</label>
-			<input type="text" class="widefat" style="width: 30px;" id="<?php echo $this->get_field_id('width'); ?>" name="<?php echo $this->get_field_name('width'); ?>" value="<?php echo $instance['width']; ?>" />
+			<input type="text" class="widefat" style="width: 50px;" id="<?php echo $this->get_field_id('width'); ?>" name="<?php echo $this->get_field_name('width'); ?>" value="<?php echo $instance['width']; ?>" />
 		</p>
 		
 		<p>
